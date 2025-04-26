@@ -24,7 +24,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 5), () {
+    Future.delayed(const Duration(seconds: 9), () {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => FoodsShopMain()),
       );
@@ -227,7 +227,6 @@ class _FoodsShopMainState extends State<FoodsShopMain> {
         ],
       ),
 
-      /// ✅ **Bottom Navigation Bar dengan Animasi Smooth**
       bottomNavigationBar: CurvedNavigationBar(
         backgroundColor: Colors.white,
         color: Utils.mainColor,
@@ -362,7 +361,7 @@ class _FoodsPagerState extends State<FoodsPager> {
             effect: ExpandingDotsEffect(
               dotHeight: 8,
               dotWidth: 8,
-              activeDotColor: Colors.pink,
+              activeDotColor: Utils.mainColor,
               dotColor: Colors.grey,
             ),
           ),
@@ -415,7 +414,7 @@ class _FoodFilterBarState extends State<FoodFilterBar> {
               margin: const EdgeInsets.symmetric(horizontal: 8),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.pink : Colors.grey[200],
+                color: isSelected ? Utils.mainColor : Colors.grey[200],
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Center(
@@ -636,22 +635,15 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
       if (index != -1) {
         widget.cart[index].quantity += quantity;
       } else {
-        widget.cart.add(Food(
-          foodId: widget.food.foodId,
-          foodName: widget.food.foodName,
-          foodCategory: widget.food.foodCategory,
-          foodWeight: widget.food.foodWeight,
-          foodType: widget.food.foodType,
-          foodDescription: widget.food.foodDescription,
-          foodImage: widget.food.foodImage,
-          foodQuantity: widget.food.foodQuantity,
-          quantity: quantity,
-        ));
+        widget.cart.add(widget.food.copyWith(quantity: quantity));
       }
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("${widget.food.foodName} added to cart!")),
+      SnackBar(
+        content: Text("${widget.food.foodName} added to cart!"),
+        duration: Duration(seconds: 2),
+      ),
     );
   }
 
@@ -663,11 +655,17 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
         widget.favorites.add(widget.food);
       }
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(widget.favorites.contains(widget.food) ? "Added to favorites!" : "Removed from favorites!"),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    bool isLocalAsset = !widget.food.foodImage.startsWith('http');
     bool isFavorite = widget.favorites.contains(widget.food);
 
     return Scaffold(
@@ -687,55 +685,31 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
             ),
             onPressed: toggleFavorite,
           ),
-          Stack(
-            children: [
-              IconButton(
-                icon: Icon(Icons.shopping_cart, color: Colors.black),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CartPage(cart: widget.cart, favorites: widget.favorites),
-                    ),
-                  );
-                },
-              ),
-              if (widget.cart.isNotEmpty)
-                Positioned(
-                  right: 5,
-                  top: 5,
-                  child: CircleAvatar(
-                    radius: 8,
-                    backgroundColor: Colors.red,
-                    child: Text("${widget.cart.length}", style: TextStyle(fontSize: 12, color: Colors.white)),
-                  ),
-                ),
-            ],
-          ),
         ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-            child: isLocalAsset
-                ? Image.asset(widget.food.foodImage, width: double.infinity, height: 300, fit: BoxFit.cover)
-                : Image.network(widget.food.foodImage, width: double.infinity, height: 300, fit: BoxFit.cover),
-          ),
-          Expanded(
-            child: Container(
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Ganti Image.network dengan Image.asset
+            Image.asset(
+              widget.food.foodImage, // Menggunakan gambar lokal
+              width: double.infinity,
+              height: 300,
+              fit: BoxFit.cover,
+            ),
+            Padding(
               padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(widget.food.foodName, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 5),
-                  Text(widget.food.foodDescription, style: TextStyle(color: Colors.grey)),
+                  SizedBox(height: 10),
+                  Text("Category: ${widget.food.foodCategory}", style: TextStyle(color: Colors.grey)),
+                  SizedBox(height: 10),
+                  Text("Weight: ${widget.food.foodWeight}g", style: TextStyle(color: Colors.grey)),
+                  SizedBox(height: 10),
+                  Text(widget.food.foodDescription, style: TextStyle(color: Colors.black87)),
                   SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -763,26 +737,26 @@ class _FoodDetailPageState extends State<FoodDetailPage> {
                           ),
                         ],
                       ),
+                      ElevatedButton(
+                        onPressed: addToCart,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          minimumSize: Size(120, 45),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: Text("Add to Cart", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                      ),
                     ],
-                  ),
-                  Spacer(),
-                  ElevatedButton(
-                    onPressed: addToCart,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Utils.mainColor,
-                      minimumSize: Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: Text("Add to Cart", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+
 }
 
 class CartPage extends StatefulWidget {
@@ -951,26 +925,6 @@ class _CartPageState extends State<CartPage> {
   }
 }
 
-class Page1 extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => FoodsShopMain()),
-        );
-      },
-      child: Center(
-        child: Text(
-          'Page 1 (Tap to go to Home)',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-      ),
-    );
-  }
-}
-
 class Page2 extends StatefulWidget {
   final List<Food> favorites;
   final List<Food> cart;
@@ -982,7 +936,9 @@ class Page2 extends StatefulWidget {
 }
 
 class _Page2State extends State<Page2> {
-  int _currentIndex = 1; // ✅ Index untuk halaman Favorites
+  int _currentIndex = 1;
+  bool _selectAll = false;
+  List<Food> _selectedFavorites = [];
 
   void _navigateToPage(int index) {
     if (index == _currentIndex) return;
@@ -997,7 +953,6 @@ class _Page2State extends State<Page2> {
     setState(() => _currentIndex = index);
   }
 
-  /// ✅ **Fungsi untuk transisi halaman yang smooth**
   Route _createRoute(Widget page) {
     return PageRouteBuilder(
       transitionDuration: Duration(milliseconds: 500),
@@ -1008,47 +963,111 @@ class _Page2State extends State<Page2> {
     );
   }
 
-  /// ✅ **Hapus produk dari daftar favorit**
-  void _removeFromFavorites(Food food) {
+  void _toggleSelectAll() {
     setState(() {
-      widget.favorites.remove(food);
+      _selectAll = !_selectAll;
+      _selectedFavorites = _selectAll ? List.from(widget.favorites) : [];
     });
+  }
+
+  void _toggleSelection(Food food) {
+    setState(() {
+      if (_selectedFavorites.contains(food)) {
+        _selectedFavorites.remove(food);
+      } else {
+        _selectedFavorites.add(food);
+      }
+    });
+  }
+
+  void _removeSelectedFavorites() {
+    if (_selectedFavorites.isEmpty) return;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Confirm Delete"),
+        content: Text("Are you sure you want to remove selected favorites?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                widget.favorites.removeWhere((food) => _selectedFavorites.contains(food));
+                _selectedFavorites.clear();
+                _selectAll = false;
+              });
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Selected favorites removed!")),
+              );
+            },
+            child: Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Favorites"), backgroundColor: Utils.mainColor),
-
-      /// ✅ **Tampilkan daftar favorit**
+      appBar: AppBar(
+        title: Text("Favorites"),
+        backgroundColor: Utils.mainColor,
+        actions: [
+          IconButton(
+            icon: Icon(_selectAll ? Icons.check_box : Icons.check_box_outline_blank),
+            onPressed: _toggleSelectAll,
+          ),
+          if (_selectedFavorites.isNotEmpty)
+            IconButton(
+              icon: Icon(Icons.delete, color: Colors.red),
+              onPressed: _removeSelectedFavorites,
+            ),
+        ],
+      ),
       body: widget.favorites.isEmpty
           ? Center(child: Text("No favorites yet!"))
           : ListView.builder(
         itemCount: widget.favorites.length,
         itemBuilder: (context, index) {
           final food = widget.favorites[index];
+          final isSelected = _selectedFavorites.contains(food);
 
-          return ListTile(
-            leading: Image.asset(
-              food.foodImage,
-              width: 50,
-              height: 50,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Image.asset('assets/image/placeholder.png', width: 50, height: 50);
-              },
-            ),
-            title: Text(food.foodName),
-            subtitle: Text(food.foodCategory),
-            trailing: IconButton(
-              icon: Icon(Icons.delete, color: Colors.red),
-              onPressed: () => _removeFromFavorites(food),
+          return GestureDetector(
+            onTap: () => _toggleSelection(food),
+            child: Card(
+              color: isSelected ? Colors.grey[300] : Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              child: ListTile(
+                leading: Image.asset(
+                  food.foodImage,
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.asset('assets/image/placeholder.png', width: 50, height: 50);
+                  },
+                ),
+                title: Text(food.foodName, style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(food.foodCategory),
+                trailing: isSelected
+                    ? Icon(Icons.check_circle, color: Colors.green)
+                    : IconButton(
+                  icon: Icon(Icons.delete, color: Colors.red),
+                  onPressed: () => _removeSelectedFavorites(),
+                ),
+              ),
             ),
           );
         },
       ),
-
-      /// ✅ **Bottom Navigation Bar**
       bottomNavigationBar: CurvedNavigationBar(
         backgroundColor: Colors.white,
         color: Utils.mainColor,
@@ -1064,7 +1083,6 @@ class _Page2State extends State<Page2> {
       ),
     );
   }
-
 }
 
 class Page4 extends StatefulWidget {
@@ -1080,14 +1098,45 @@ class Page4 extends StatefulWidget {
 class _Page4State extends State<Page4> {
   int _selectedIndex = 2;
   bool _selectAll = false;
+  List<Food> _selectedItems = [];
+
+  void _toggleSelectAll() {
+    setState(() {
+      _selectAll = !_selectAll;
+      _selectedItems = _selectAll ? List.from(widget.cart) : [];
+    });
+  }
 
   void _removeSelectedItems() {
-    setState(() {
-      if (_selectAll) {
-        widget.cart.clear();
-      }
-      _selectAll = false;
-    });
+    if (_selectedItems.isEmpty) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Confirm Deletion"),
+        content: Text("Are you sure you want to remove the selected items from your cart?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                widget.cart.removeWhere((food) => _selectedItems.contains(food));
+                _selectedItems.clear();
+                _selectAll = false;
+              });
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Selected items have been removed from the cart.")),
+              );
+            },
+            child: Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _navigateToPage(Widget page, int index) {
@@ -1099,7 +1148,6 @@ class _Page4State extends State<Page4> {
     });
   }
 
-  /// ✅ **Fungsi untuk transisi halaman yang smooth**
   Route _createRoute(Widget page) {
     return PageRouteBuilder(
       transitionDuration: Duration(milliseconds: 500),
@@ -1118,11 +1166,7 @@ class _Page4State extends State<Page4> {
         actions: [
           Checkbox(
             value: _selectAll,
-            onChanged: (bool? value) {
-              setState(() {
-                _selectAll = value ?? false;
-              });
-            },
+            onChanged: (bool? value) => _toggleSelectAll(),
           ),
           IconButton(
             icon: Icon(Icons.delete, color: Colors.red),
@@ -1136,23 +1180,43 @@ class _Page4State extends State<Page4> {
         itemCount: widget.cart.length,
         itemBuilder: (context, index) {
           final food = widget.cart[index];
+          final isSelected = _selectedItems.contains(food);
 
-          return ListTile(
-            leading: Image.asset(
-              food.foodImage,
-              width: 50,
-              height: 50,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Image.asset('assets/image/placeholder.png', width: 50, height: 50);
-              },
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                isSelected ? _selectedItems.remove(food) : _selectedItems.add(food);
+              });
+            },
+            child: Card(
+              color: isSelected ? Colors.grey[300] : Colors.white,
+              elevation: 2,
+              margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              child: ListTile(
+                leading: Image.asset(
+                  food.foodImage,
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.asset('assets/image/placeholder.png', width: 50, height: 50);
+                  },
+                ),
+                title: Text(food.foodName, style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text("Qty: ${food.quantity}"),
+                trailing: Checkbox(
+                  value: isSelected,
+                  onChanged: (bool? value) {
+                    setState(() {
+                      value == true ? _selectedItems.add(food) : _selectedItems.remove(food);
+                    });
+                  },
+                ),
+              ),
             ),
-            title: Text(food.foodName),
-            subtitle: Text("Qty: ${food.quantity}"),
           );
         },
       ),
-
       bottomNavigationBar: CurvedNavigationBar(
         backgroundColor: Colors.white,
         color: Utils.mainColor,
@@ -1172,7 +1236,6 @@ class _Page4State extends State<Page4> {
       ),
     );
   }
-
 }
 
 class Page5 extends StatefulWidget {
@@ -1365,8 +1428,8 @@ class _DrawerSideMenuState extends State<DrawerSideMenu> {
 }
 
 class Utils {
-  static const Color mainColor = Color(0xFFFF0F7E);
-  static const Color mainDark = Color(0xFF980346);
+  static const Color mainColor = Color(0xFF57B4BA);
+  static const Color mainDark = Color(0xFF007074);
   static const String donutLogoWhiteNoText = 'https://romanejaquez.github.io/flutter-codelab4/assets/donut_shop_logowhite_notext.png';
   static const String donutLogoWhiteText = 'https://romanejaquez.github.io/flutter-codelab4/assets/donut_shop_text_reversed.png';
   static const String donutLogoRedText = 'https://romanejaquez.github.io/flutter-codelab4/assets/donut_shop_text.png';
@@ -1509,6 +1572,19 @@ class Food {
     required this.foodQuantity,
      this.quantity = 1
   });
+  Food copyWith({int? quantity}) {
+    return Food(
+      foodId: this.foodId,
+      foodName: this.foodName,
+      foodCategory: this.foodCategory,
+      foodWeight: this.foodWeight,
+      foodType: this.foodType,
+      foodDescription: this.foodDescription,
+      foodImage: this.foodImage,
+      foodQuantity: this.foodQuantity,
+      quantity: quantity ?? this.quantity,
+    );
+  }
 }
 
 class FoodsPage {
